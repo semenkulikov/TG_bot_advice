@@ -13,6 +13,10 @@ bot = TeleBot(token=config.BOT_TOKEN, state_storage=storage)
 
 
 log_formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(name)s - %(message)s')
+
+if not os.path.exists(os.path.join(BASE_DIR, "logs")):
+    os.makedirs(os.path.join(BASE_DIR, "logs"))
+
 my_handler = RotatingFileHandler(os.path.join(BASE_DIR, "logs/bot.log"), mode='a', maxBytes=2 * 1024 * 1024,
                                  backupCount=1, encoding="utf8", delay=0)
 my_handler.setFormatter(log_formatter)
