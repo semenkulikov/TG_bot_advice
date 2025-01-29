@@ -2,6 +2,18 @@ from telebot.types import Message
 from loader import bot, app_logger
 from config_data.config import DEFAULT_COMMANDS, ADMIN_COMMANDS, ALLOWED_USERS
 from database.models import User, Group
+from keyboards.reply.handlers_reply import handlers_reply
+
+
+start_text = """
+Здравствуйте, {full_name}! Если вы хотите записаться на консультацию, пожалуйста, нажмите на кнопку *«Записаться»*, расположенную ниже.
+
+Для управления своими записями выберите кнопку *«Мои записи»*.
+
+Если вас интересует дополнительная информация — выберите кнопку *«Частые вопросы»*, возможно, там вы найдете ответ на свой вопрос.
+
+*ВАЖНО!* Для записи на консультацию, вам должно быть не менее 21 года.
+"""
 
 
 @bot.message_handler(commands=['start'])
@@ -21,10 +33,8 @@ def bot_start(message: Message):
                                                    f"{'\n'.join(commands)}")
         else:
             app_logger.info(f"Внимание! Новый юзер: {message.from_user.full_name} - {message.from_user.username}")
-            bot.send_message(message.from_user.id, f"Здравствуйте, {message.from_user.full_name}! "
-                                                   f"Я - телеграм бот. "
-                                                   f"Вам доступны следующие команды:\n"
-                                                   f"{'\n'.join(commands)}")
+            bot.send_message(message.from_user.id, start_text.format(full_name=message.from_user.full_name),
+                             reply_markup=handlers_reply(), parse_mode="Markdown")
 
     else:
         bot.send_message(message.chat.id, "Здравствуйте! Я - телеграм бот, модератор каналов и групп. "
