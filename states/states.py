@@ -14,3 +14,4 @@ class ReservationStates(StatesGroup):
 class UsersDataStates(StatesGroup):
     """ Состояния для пользовательских данных """
     get_data_state = State()
+    get_birthdate = State()
