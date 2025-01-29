@@ -1,7 +1,7 @@
 from telebot.types import Message
 from loader import bot
 from handlers.custom_heandlers.reservation_handlers import advice_handler
-from handlers.custom_heandlers.user_handlers import my_advices_handler, faq_handler
+from handlers.custom_heandlers.user_handlers import my_timetables_handler, faq_handler
 from handlers.custom_heandlers.users_data_handlers import get_users_data_handler
 
 
@@ -12,7 +12,7 @@ def bot_echo(message: Message):
     if message.text == "Записаться":
         advice_handler(message)
     elif message.text == "Мои записи":
-        my_advices_handler(message)
+        my_timetables_handler(message)
     elif message.text == "Частые вопросы":
         faq_handler(message)
     elif message.text == "Отправить данные":

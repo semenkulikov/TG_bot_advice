@@ -15,3 +15,8 @@ class UsersDataStates(StatesGroup):
     """ Состояния для пользовательских данных """
     get_data_state = State()
     get_birthdate = State()
+
+class TimetablesStates(StatesGroup):
+    """ Состояния для пользовательской менюшки """
+    get_obj = State()
+    delete_obj = State()
