@@ -20,3 +20,8 @@ class TimetablesStates(StatesGroup):
     """ Состояния для пользовательской менюшки """
     get_obj = State()
     delete_obj = State()
+
+
+class UserStates(StatesGroup):
+    start_date = State()  # Состояние для выбора даты начала
+    end_date = State()    # Состояние для выбора даты конца

@@ -3,10 +3,10 @@ import datetime
 from telebot.types import Message
 
 from config_data.config import ALLOWED_USERS
-from database.models import User, Timetable
+from database.models import User, Timetable, create_time_tables
 from keyboards.inline.accounts import users_markup
-from loader import bot, app_logger, calendar, calendar_callback
-from states.states import AdminPanel
+from loader import bot, app_logger
+from states.states import AdminPanel, UserStates
 
 
 @bot.message_handler(commands=["admin_panel"])
@@ -70,54 +70,58 @@ def get_report_handler(message: Message):
     """ Админ хендлер для отправки отчета о записях на консультации """
     if message.from_user.id in ALLOWED_USERS:
         app_logger.info(f"Запрос на генерацию расписания от администратора {message.from_user.full_name}")
-        with bot.retrieve_data(message.from_user.id, message.chat.id) as user_data:
-            user_data[str(message.chat.id)] = {"start_date": None, "end_date": None}
+        bot.set_state(message.from_user.id, UserStates.start_date)
 
-            bot.send_message(
-                message.chat.id,
-                "Выберите дату начала:",
-                reply_markup=calendar.create_calendar(name=calendar_callback.prefix),
-            )
+        bot.send_message(
+            message.chat.id,
+            "Введите дату начала генерации в формате День.Месяц.Год (например, 31.01.2025)")
     else:
-        bot.send_message(message.from_user.id, "У вас недостаточно прав")
+        bot.send_message(message.chat.id, "У вас недостаточно прав")
         app_logger.warning(f"Пользователь {message.from_user.full_name} попытался сгенерировать расписание!")
 
-# Обработчик inline-кнопок календаря
-@bot.callback_query_handler(func=lambda call: call.data.startswith(calendar_callback.prefix))
-def handle_calendar_callback(call):
-    chat_id = call.message.chat.id
-    name, action, year, month, day = call.data.split(calendar_callback.sep)
-    date = calendar.calendar_query_handler(bot, call, name, action, year, month, day)
 
-    with bot.retrieve_data(call.from_user.id, call.from_user.id) as user_data:
-        if action == "DAY":
-            if user_data[chat_id]["start_date"] is None:
-                # Пользователь выбирает дату начала
-                user_data[chat_id]["start_date"] = date
-                bot.send_message(
-                    chat_id,
-                    f"Дата начала: {date.strftime('%d.%m.%Y')}\nТеперь выберите дату конца:",
-                    reply_markup=calendar.create_calendar(name=calendar_callback.prefix),
-                )
-            else:
-                # Пользователь выбирает дату конца
-                if date >= user_data[chat_id]["start_date"]:
-                    user_data[chat_id]["end_date"] = date
-                    bot.send_message(
-                        chat_id,
-                        f"Дата конца: {date.strftime('%d.%m.%Y')}\n"
-                        f"Период выбран: {user_data[chat_id]['start_date'].strftime('%d.%m.%Y')}"
-                        f" - {date.strftime('%d.%m.%Y')}",
-                    )
-                    # Сброс данных после выбора
-                    user_data[chat_id] = {"start_date": None, "end_date": None}
-                else:
-                    bot.send_message(
-                        chat_id,
-                        "Дата конца не может быть раньше даты начала. Попробуйте снова.",
-                        reply_markup=calendar.create_calendar(name=calendar_callback.prefix),
-                    )
+@bot.message_handler(state=UserStates.start_date)
+def get_start_date(message: Message):
+    """ Хендлер для получения начальной даты. Проверяет, чтобы не было раньше чем сегодня """
+    app_logger.info(f"Начальная дата от {message.from_user.full_name}: {message.text}")
+    try:
+        cur_start_date = datetime.date(int(message.text.split(".")[2]), int(message.text.split(".")[1]),
+                                       int(message.text.split(".")[0]))
+    except Exception:
+        bot.send_message(message.from_user.id, "Некорректный формат даты! Попробуйте еще раз.")
+        return
+    if cur_start_date < datetime.date.today():
+        bot.send_message(message.from_user.id, "Дата начала не может быть раньше текущей даты!")
+        return
 
-        elif action == "CANCEL":
-            bot.send_message(chat_id, "Отменено.")
-            user_data[chat_id] = {"start_date": None, "end_date": None}
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data["start_date"] = cur_start_date
+    bot.send_message(message.from_user.id, "Введите дату окончания приема")
+    bot.set_state(message.from_user.id, UserStates.end_date)
+
+
+@bot.message_handler(state=UserStates.end_date)
+def get_end_date(message: Message):
+    """ Хендлер для получения конечной даты. Проверяет, чтобы не было раньше чем начальная дата """
+    app_logger.info(f"Конечная дата от {message.from_user.full_name}: {message.text}")
+    try:
+        cur_end_date: datetime.date = datetime.date(int(message.text.split(".")[2]), int(message.text.split(".")[1]),
+                                     int(message.text.split(".")[0]))
+    except Exception:
+        bot.send_message(message.from_user.id, "Некорректный формат даты! Попробуйте еще раз.")
+        return
+
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        cur_start_date: datetime.date = data["start_date"]
+
+    if cur_end_date < cur_start_date:
+        bot.send_message(message.from_user.id, "Дата окончания не может быть раньше даты начала!")
+        return
+
+    app_logger.info(f"Администратор {message.from_user.full_name} запустил генерацию графика с "
+                    f"{cur_start_date.strftime("%d.%m.%Y")} по {cur_end_date.strftime("%d.%m.%Y")}")
+    bot.send_message(message.from_user.id, f"Запускаю генерацию графика с {cur_start_date.strftime("%d.%m.%Y")} по "
+                                           f"{cur_end_date.strftime("%d.%m.%Y")}")
+    create_time_tables(start_date=cur_start_date, end_date=cur_end_date)
+    bot.send_message(message.from_user.id, "Генерация завершена!")
+    bot.set_state(message.from_user.id, None)

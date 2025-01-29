@@ -74,7 +74,7 @@ def create_time_tables(start_date: datetime.date, end_date: datetime.date):
                                                     Timetable.start_time == start_time,
                                                     Timetable.end_time == end_time).exists():
                         Timetable.create(date=cur_date, start_time=start_time, end_time=end_time)
-            elif cur_date.weekday() in (2, 3, 4):  # Среда, четверг, пятница и суббота - офлайн прием
+            elif cur_date.weekday() in (2, 3, 4, 5):  # Среда, четверг, пятница и суббота - офлайн прием
                 for start_time in [# "13:00", "13:20", "13:40",
                                    "14:00", "14:20", "14:40",
                                    "15:00", "15:20", "15:40", "16:00", "16:20", "16:40",
