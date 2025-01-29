@@ -10,7 +10,7 @@ from states.states import AdminPanel
 
 
 @bot.message_handler(commands=["get_often_questions"])
-def FAQ_handler(message: Message):
+def faq_handler(message: Message):
 
     # Получение объекта пользователя из БД.
     user = User.get_or_none(User.user_id == message.from_user.id)
@@ -26,3 +26,10 @@ def FAQ_handler(message: Message):
 8. Можете ли вы помочь избавиться от алкогольной или другой зависимости? — Да, в большинстве случаев результат положительный.
     """
     bot.send_message(message.chat.id, result_text, parse_mode="Markdown")
+
+
+@bot.message_handler(commands=["my_advices"])
+def my_advices_handler(message: Message):
+    """ Хендлер для управления записями пользователя """
+    bot.send_message(message.from_user.id, "Эта функция еще в разработке")
+

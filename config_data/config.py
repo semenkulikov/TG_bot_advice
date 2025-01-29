@@ -11,6 +11,7 @@ DEFAULT_COMMANDS = (
     ('start', "Запустить бота"),
     ('help', "Вывести справку"),
     ("get_reservation", "Записаться на прием"),
+    ("my_advices", "Мои записи"),
     ("get_often_questions", "Частые вопросы"),
 )
 ADMIN_COMMANDS = (
