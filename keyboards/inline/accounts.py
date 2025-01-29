@@ -14,3 +14,12 @@ def users_markup():
             actions.add(InlineKeyboardButton(text=f"{user.full_name}", callback_data=user.id))
     actions.add(InlineKeyboardButton(text=f"Выйти", callback_data="Exit"))
     return actions
+
+
+def users_data_markup():
+    """ Inline buttons для выбора типа отправляемых данных """
+
+    actions = InlineKeyboardMarkup(row_width=2)
+    actions.add(InlineKeyboardButton(text=f"Номер телефона", callback_data="Contact"))
+    actions.add(InlineKeyboardButton(text=f"Дату рождения", callback_data="Birthdate"))
+    return actions
