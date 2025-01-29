@@ -4,7 +4,7 @@ from telebot.types import Message
 
 from config_data.config import ALLOWED_USERS
 from database.models import User, Timetable
-from keyboards.inline.accounts import users_markup
+from keyboards.inline.accounts import users_markup, get_timetables_markup, delete_timetable_markup
 from loader import bot, app_logger
 from states.states import AdminPanel
 
@@ -29,7 +29,54 @@ def faq_handler(message: Message):
 
 
 @bot.message_handler(commands=["my_advices"])
-def my_advices_handler(message: Message):
+def my_timetables_handler(message: Message):
     """ Хендлер для управления записями пользователя """
-    bot.send_message(message.from_user.id, "Эта функция еще в разработке")
+    user = User.get(User.user_id == message.from_user.id)
+    app_logger.info(f"Пользователь {user.full_name} зашел в управление записями.")
+    bot.send_message(message.from_user.id, "Вот ваши текущие записи:", reply_markup=get_timetables_markup(user.id))
+    bot.set_state(message.from_user.id, TimetablesStates.get_obj)
 
+
+@bot.callback_query_handler(func=None, state=TimetablesStates.get_obj)
+def reservation_handler(call):
+    """ Хендлер для выдачи информации по объекту Timetable """
+
+    bot.answer_callback_query(callback_query_id=call.id)
+
+    if call.data == "Cancel":
+        bot.send_message(call.from_user.id, "Вы вернулись в главное меню")
+        bot.set_state(call.from_user.id, None)
+
+    cur_timetable_obj: Timetable = Timetable.get_by_id(call.data)
+    app_logger.info(f"Пользователь {call.from_user.full_name} получил информацию о записи ID={cur_timetable_obj.id}")  # noqa
+
+    with bot.retrieve_data(call.message.chat.id, call.from_user.id) as data:
+        data["cur_timetable_id"] = cur_timetable_obj.id  # noqa
+
+    bot.send_message(call.from_user.id, f"Информация о записи:\n"
+                                      f"Дата: {cur_timetable_obj.date.strftime('%d.%m')}\n"
+                                      f"Время: c {cur_timetable_obj.start_time.strftime('%H:%M')} до "
+                                      f"{cur_timetable_obj.end_time.strftime('%H:%M')}",
+                     reply_markup=delete_timetable_markup())
+    bot.set_state(call.from_user.id, TimetablesStates.delete_obj)
+
+
+@bot.callback_query_handler(func=None, state=TimetablesStates.delete_obj)
+def reservation_handler(call):
+    """ Хендлер для для удаления Timetable объекта """
+
+    bot.answer_callback_query(callback_query_id=call.id)
+
+    if call.data == "Cancel_":
+        bot.send_message(call.from_user.id, "Выберите запись для просмотра:",
+                         reply_markup=get_timetables_markup(call.from_user.id))
+        bot.set_state(call.from_user.id, TimetablesStates.get_obj)
+    elif call.data == "Delete":
+        with bot.retrieve_data(call.message.chat.id, call.from_user.id) as data:
+            cur_timetable_id = data["cur_timetable_id"]
+            cur_timetable_obj: Timetable = Timetable.get_by_id(cur_timetable_id)
+
+            app_logger.info(f"Пользователь {call.from_user.full_name} удалил запись на "
+                            f"{cur_timetable_obj.date.strftime("%d.%m.%Y")} (ID: {cur_timetable_obj.id})")
+            cur_timetable_obj.delete_instance()
+            bot.send_message(call.from_user.id, "Запись отменена!")
