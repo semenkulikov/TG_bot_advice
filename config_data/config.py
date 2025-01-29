@@ -13,7 +13,9 @@ DEFAULT_COMMANDS = (
     ("get_reservation", "Записаться на прием"),
     ("my_advices", "Мои записи"),
     ("get_often_questions", "Частые вопросы"),
+    ("send_data", "Отправить данные"),
 )
+
 ADMIN_COMMANDS = (
     ("admin_panel", "Админка"),
     ("get_report", "Запросить отчет"),

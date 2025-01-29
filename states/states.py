@@ -9,3 +9,8 @@ class ReservationStates(StatesGroup):
     get_mode = State()
     get_date = State()
     get_time = State()
+
+
+class UsersDataStates(StatesGroup):
+    """ Состояния для пользовательских данных """
+    get_data_state = State()
