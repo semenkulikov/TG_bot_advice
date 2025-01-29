@@ -53,7 +53,7 @@ def create_models():
 def create_time_tables():
     """ Функция для генерирования графика расписания консультаций на неделю. """
     cur_datetime = datetime.datetime.now()
-    for i in range(21):
+    for i in range(7):
         cur_date = cur_datetime + datetime.timedelta(days=i)
         if cur_date.weekday() not in [5, 6]:  # Будни, кроме выходных
             if cur_date.weekday() in (0, 1, 2):
@@ -89,7 +89,7 @@ def delete_time_tables():
 
 
 def generate_time_tables():
-    """ Функция для асинхронного запуска функции create_time_tables каждые 3 недели """
+    """ Функция для асинхронного запуска create_time_tables каждую неделю """
     while True:
         app_logger.info("Генерация графика расписания консультаций и удаление старых записей...")
         threading.Timer(24 * 60 * 60, delete_time_tables).start()
