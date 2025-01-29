@@ -19,6 +19,7 @@ DEFAULT_COMMANDS = (
 ADMIN_COMMANDS = (
     ("admin_panel", "Админка"),
     ("get_report", "Запросить отчет"),
+    ("run_generating", "Сгенерировать расписание"),
 )
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

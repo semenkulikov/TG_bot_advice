@@ -1,5 +1,5 @@
 import os
-
+from telebot_calendar import Calendar, CallbackData
 from telebot import TeleBot
 from telebot.storage import StateMemoryStorage
 from config_data import config
@@ -30,3 +30,7 @@ app_logger = logging.getLogger("app_logger")
 app_logger.setLevel(logging.DEBUG)
 app_logger.addHandler(my_handler)
 app_logger.addHandler(stream_handler)
+
+
+calendar = Calendar()
+calendar_callback = CallbackData("calendar", "action", "year", "month", "day")

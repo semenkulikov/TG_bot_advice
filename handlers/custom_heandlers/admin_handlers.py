@@ -5,7 +5,7 @@ from telebot.types import Message
 from config_data.config import ALLOWED_USERS
 from database.models import User, Timetable
 from keyboards.inline.accounts import users_markup
-from loader import bot, app_logger
+from loader import bot, app_logger, calendar, calendar_callback
 from states.states import AdminPanel
 
 
@@ -63,3 +63,61 @@ def get_report_handler(message: Message):
     else:
         bot.send_message(message.from_user.id, "У вас недостаточно прав")
         app_logger.warning(f"Пользователь {message.from_user.full_name} попытался запросить отчет!")
+
+
+@bot.message_handler(commands=["run_generating"])
+def get_report_handler(message: Message):
+    """ Админ хендлер для отправки отчета о записях на консультации """
+    if message.from_user.id in ALLOWED_USERS:
+        app_logger.info(f"Запрос на генерацию расписания от администратора {message.from_user.full_name}")
+        with bot.retrieve_data(message.from_user.id, message.chat.id) as user_data:
+            user_data[str(message.chat.id)] = {"start_date": None, "end_date": None}
+
+            bot.send_message(
+                message.chat.id,
+                "Выберите дату начала:",
+                reply_markup=calendar.create_calendar(name=calendar_callback.prefix),
+            )
+    else:
+        bot.send_message(message.from_user.id, "У вас недостаточно прав")
+        app_logger.warning(f"Пользователь {message.from_user.full_name} попытался сгенерировать расписание!")
+
+# Обработчик inline-кнопок календаря
+@bot.callback_query_handler(func=lambda call: call.data.startswith(calendar_callback.prefix))
+def handle_calendar_callback(call):
+    chat_id = call.message.chat.id
+    name, action, year, month, day = call.data.split(calendar_callback.sep)
+    date = calendar.calendar_query_handler(bot, call, name, action, year, month, day)
+
+    with bot.retrieve_data(call.from_user.id, call.from_user.id) as user_data:
+        if action == "DAY":
+            if user_data[chat_id]["start_date"] is None:
+                # Пользователь выбирает дату начала
+                user_data[chat_id]["start_date"] = date
+                bot.send_message(
+                    chat_id,
+                    f"Дата начала: {date.strftime('%d.%m.%Y')}\nТеперь выберите дату конца:",
+                    reply_markup=calendar.create_calendar(name=calendar_callback.prefix),
+                )
+            else:
+                # Пользователь выбирает дату конца
+                if date >= user_data[chat_id]["start_date"]:
+                    user_data[chat_id]["end_date"] = date
+                    bot.send_message(
+                        chat_id,
+                        f"Дата конца: {date.strftime('%d.%m.%Y')}\n"
+                        f"Период выбран: {user_data[chat_id]['start_date'].strftime('%d.%m.%Y')}"
+                        f" - {date.strftime('%d.%m.%Y')}",
+                    )
+                    # Сброс данных после выбора
+                    user_data[chat_id] = {"start_date": None, "end_date": None}
+                else:
+                    bot.send_message(
+                        chat_id,
+                        "Дата конца не может быть раньше даты начала. Попробуйте снова.",
+                        reply_markup=calendar.create_calendar(name=calendar_callback.prefix),
+                    )
+
+        elif action == "CANCEL":
+            bot.send_message(chat_id, "Отменено.")
+            user_data[chat_id] = {"start_date": None, "end_date": None}
