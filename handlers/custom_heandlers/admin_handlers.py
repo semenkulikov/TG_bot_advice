@@ -23,12 +23,11 @@ def admin_panel(message: Message):
 
 @bot.callback_query_handler(func=None, state=AdminPanel.get_users)
 def get_user(call):
+    bot.answer_callback_query(callback_query_id=call.id)
     if call.data == "Exit":
-        bot.answer_callback_query(callback_query_id=call.id)
         bot.send_message(call.message.chat.id, "Вы успешно вышли из админ панели.")
         bot.set_state(call.message.chat.id, None)
     else:
-        bot.answer_callback_query(callback_query_id=call.id)
         user_obj: User = User.get_by_id(call.data)
         bot.send_message(call.message.chat.id, f"Имя: {user_obj.full_name}\n"
                                                f"Телеграм: @{user_obj.username}\n")
