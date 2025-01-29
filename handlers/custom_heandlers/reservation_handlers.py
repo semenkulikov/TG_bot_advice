@@ -31,12 +31,12 @@ def reservation_date_handler(call):
     if call.data in "Online":
         app_logger.info(f"Запрос бронирования времени на онлайн прием от {call.from_user.full_name}")
         bot.send_message(call.message.chat.id, "Вы записываетесь на онлайн консультацию. "
-                                          "Она проходит по четвергам и пятницам с 13:00 до 19:00.")
+                                          "Она проходит по понедельникам и вторникам с 17:00 до 22:00.")
         online_advice = True
     elif call.data in "Home":
         app_logger.info(f"Запрос бронирования времени на личный прием от {call.from_user.full_name}")
         bot.send_message(call.message.chat.id, "Вы записываетесь на личную консультацию. "
-                                          "Она проходит по понедельникам, вторникам и средам с 14:00 до 19:00.")
+                                          "Она проходит со среды по субботу с 14:00 до 18:00.")
         online_advice = False
     else:
         # bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)

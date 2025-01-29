@@ -26,12 +26,12 @@ def get_date_markup(online_advice=True) -> InlineKeyboardMarkup:
     for timetable_obj in Timetable.select().where(Timetable.date >= cur_datetime.date()):
         if timetable_obj.date == cur_datetime.date():
             if timetable_obj.start_time.hour >= cur_datetime.time().hour:
-                if (online_advice is False and timetable_obj.date.weekday() in (0, 1, 2) or
-                        online_advice is True and timetable_obj.date.weekday() in (3, 4)):
+                if (online_advice is False and timetable_obj.date.weekday() in (2, 3, 4, 5) or
+                        online_advice is True and timetable_obj.date.weekday() in (0, 1)):
                     existing_dates.append(timetable_obj.date)
         else:
-            if (online_advice is False and timetable_obj.date.weekday() in (0, 1, 2) or
-                    online_advice is True and timetable_obj.date.weekday() in (3, 4)):
+            if (online_advice is False and timetable_obj.date.weekday() in (2, 3, 4, 5) or
+                    online_advice is True and timetable_obj.date.weekday() in (0, 1)):
                 existing_dates.append(timetable_obj.date)
     # Сортировка списка объектов Timetable по возрастанию даты и удаление дублирующихся записей
     existing_dates = sorted(list(set(existing_dates)))

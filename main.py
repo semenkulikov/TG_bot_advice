@@ -2,7 +2,7 @@ from loader import bot, app_logger
 import handlers  # noqa
 from telebot.custom_filters import StateFilter
 from utils.set_bot_commands import set_default_commands
-from database.models import create_models, start_generate
+from database.models import create_models
 from config_data.config import ADMIN_ID
 
 if __name__ == '__main__':
@@ -12,8 +12,8 @@ if __name__ == '__main__':
     set_default_commands(bot)
     app_logger.info("Загрузка базовых команд...")
 
-    start_generate()
-    app_logger.info("Генерация расписания...")
+    # start_generate()
+    # app_logger.info("Генерация расписания...")
 
     app_logger.info(f"Бот @{bot.get_me().username} запущен.")
     bot.send_message(ADMIN_ID, "Бот запущен.")
