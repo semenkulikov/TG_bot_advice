@@ -1,6 +1,7 @@
 import datetime
 import threading
 
+from config_data.config import DEFAULT_COMMANDS, ADMIN_COMMANDS
 from database.models import Timetable, User
 from loader import app_logger, bot
 
@@ -55,3 +56,10 @@ def send_notification_message(user: User, consultation_datetime):
     """
     app_logger.info(f"Отправка уведомления пользователю {user.full_name}")
     bot.send_message(user.user_id, f"Напоминание!\nУ вас есть консультация на {consultation_datetime}.")
+
+
+def get_all_commands_bot():
+    total_commands = [f"/{elem[0]}" for elem in DEFAULT_COMMANDS]
+    total_commands.extend([f"/{elem[0]}" for elem in ADMIN_COMMANDS])
+    total_commands.extend(["Записаться", "Мои записи", "Частые вопросы", "Отправить данные"])
+    return total_commands

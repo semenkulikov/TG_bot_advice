@@ -7,6 +7,7 @@ from database.models import User, Timetable, create_time_tables
 from keyboards.inline.accounts import users_markup
 from loader import bot, app_logger
 from states.states import AdminPanel, UserStates
+from utils.functions import get_all_commands_bot
 
 
 @bot.message_handler(commands=["admin_panel"])
@@ -83,6 +84,10 @@ def get_report_handler(message: Message):
 @bot.message_handler(state=UserStates.start_date)
 def get_start_date(message: Message):
     """ Хендлер для получения начальной даты. Проверяет, чтобы не было раньше чем сегодня """
+
+    if message.text in get_all_commands_bot():
+        bot.send_message(message.from_user.id, "Это команда бота!")
+        return
     app_logger.info(f"Начальная дата от {message.from_user.full_name}: {message.text}")
     try:
         cur_start_date = datetime.date(int(message.text.split(".")[2]), int(message.text.split(".")[1]),
