@@ -47,7 +47,7 @@ def send_notification(timetable_id: int):
                         f"{notification_datetime_0}")
 
     # В качестве теста отправляю уведомление через 5 секунд
-    threading.Timer(5, send_notification_message, args=(user, consultation_datetime)).start()
+    # threading.Timer(5, send_notification_message, args=(user, consultation_datetime)).start()
 
 def send_notification_message(user: User, consultation_datetime):
     """ Функция для отправки уведомления пользователю

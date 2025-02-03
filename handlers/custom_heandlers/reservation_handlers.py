@@ -18,7 +18,11 @@ def advice_handler(message: Message):
     app_logger.info(f"Запрос на прием от {message.from_user.full_name}")
 
     # Отправка inline клавиатуры для выбора режима приема
-    bot.send_message(message.from_user.id, "Выберите режим приема:", reply_markup=advice_markup())
+    message_id = bot.send_message(message.from_user.id, "Выберите режим приема:", reply_markup=advice_markup()).id
+    # Сохраняем id сообщения для дальнейшего удаления
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data[message.from_user.id] = message_id
+
     bot.set_state(message.from_user.id, ReservationStates.get_mode)
 
 
@@ -28,29 +32,37 @@ def reservation_date_handler(call):
     Callback хендлер для бронирования определенного времени для консультации.
     """
     bot.answer_callback_query(callback_query_id=call.id)
-    if call.data in "Online":
-        app_logger.info(f"Запрос бронирования времени на онлайн прием от {call.from_user.full_name}")
-        bot.send_message(call.message.chat.id, "Вы записываетесь на онлайн консультацию. "
-                                          "Она проходит по понедельникам и вторникам с 17:00 до 22:00.")
-        online_advice = True
-    elif call.data in "Home":
-        app_logger.info(f"Запрос бронирования времени на личный прием от {call.from_user.full_name}")
-        bot.send_message(call.message.chat.id, "Вы записываетесь на личную консультацию. "
-                                          "Она проходит со среды по субботу с 14:00 до 18:00.")
-        online_advice = False
-    else:
-        # bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-        # return
-        bot.send_message(call.message.chat.id, "Вы вернулись в главное меню.")
-        app_logger.info(f"Пользователь {call.from_user.full_name} вернулся в главное меню")
-        bot.set_state(call.message.chat.id, None)
-        return
+    with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
+        cur_message_id = data[call.from_user.id]
+        bot.delete_message(call.message.chat.id, cur_message_id)
+
+        if call.data in "Online":
+            app_logger.info(f"Запрос бронирования времени на онлайн прием от {call.from_user.full_name}")
+            bot.send_message(call.message.chat.id, "Вы записываетесь на онлайн консультацию. "
+                                              "Она проходит по понедельникам и вторникам с 17:00 до 22:00.")
+            online_advice = True
+        elif call.data in "Home":
+            app_logger.info(f"Запрос бронирования времени на личный прием от {call.from_user.full_name}")
+            bot.send_message(call.message.chat.id, "Вы записываетесь на личную консультацию. "
+                                              "Она проходит со среды по субботу с 14:00 до 18:00.")
+            online_advice = False
+        else:
+            # bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            # return
+            bot.send_message(call.message.chat.id, "Вы вернулись в главное меню.")
+            app_logger.info(f"Пользователь {call.from_user.full_name} вернулся в главное меню")
+            bot.set_state(call.message.chat.id, None)
+            data[call.from_user.id] = None
+            return
 
 
-    # Отправляет пользователю клавиатуру с выбором даты.
-    app_logger.info(f"Отправка клавиатуры с датами для бронирования консультации {call.from_user.full_name}")
-    bot.send_message(call.message.chat.id, "Выберите дату:", reply_markup=get_date_markup(online_advice=online_advice))
-    bot.set_state(call.message.chat.id, ReservationStates.get_date)
+        # Отправляет пользователю клавиатуру с выбором даты.
+        app_logger.info(f"Отправка клавиатуры с датами для бронирования консультации {call.from_user.full_name}")
+        message_id = bot.send_message(call.message.chat.id, "Выберите дату:",
+                                      reply_markup=get_date_markup(online_advice=online_advice)).id
+        bot.set_state(call.message.chat.id, ReservationStates.get_date)
+
+        data[call.from_user.id] = message_id
 
 
 @bot.callback_query_handler(func=None, state=ReservationStates.get_date)
@@ -59,8 +71,6 @@ def reservation_time_handler(call):
     bot.answer_callback_query(callback_query_id=call.id)
 
     if call.data in "Cancel":
-        # bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-        # return
         bot.send_message(call.message.chat.id, "Вы вернулись в главное меню.")
         app_logger.info(f"Пользователь {call.from_user.full_name} вернулся в главное меню")
         bot.set_state(call.message.chat.id, None)
@@ -80,19 +90,28 @@ def reservation_time_handler(call):
         else:
             free_times.append(f"{timetable.start_time.strftime("%H:%M")} - {timetable.end_time.strftime("%H:%M")}")
 
-    if not free_times:
-        app_logger.warning(f"Внимание! Нет свободных часов для бронирования консультации "
-                           f"на {call.message.text} от {call.from_user.full_name}")
-        # Отправка уведомления пользователю
-        bot.send_message(call.message.chat.id,
-                         "К сожалению, нет свободных часов для бронирования консультации на эту дату.")
-        bot.set_state(call.message.chat.id, None)
-        return
+    with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
+        cur_message_id = data[call.from_user.id]
+        if cur_message_id is not None:
+            bot.delete_message(call.message.chat.id, cur_message_id)
 
-    app_logger.info(f"Отправка клавиатуры с временами для бронирования консультации {call.from_user.full_name}")
-    bot.send_message(call.message.chat.id, "Выберите время:",
-                     reply_markup=get_time_markup(call.data, free_times))
-    bot.set_state(call.message.chat.id, ReservationStates.get_time)
+        if not free_times:
+            app_logger.warning(f"Внимание! Нет свободных часов для бронирования консультации "
+                               f"на {call.message.text} от {call.from_user.full_name}")
+            # Отправка уведомления пользователю
+            bot.send_message(call.message.chat.id,
+                             "К сожалению, нет свободных часов для бронирования консультации на эту дату.")
+            bot.set_state(call.message.chat.id, None)
+
+            data[call.from_user.id] = None
+            return
+
+        app_logger.info(f"Отправка клавиатуры с временами для бронирования консультации {call.from_user.full_name}")
+        message_id = bot.send_message(call.message.chat.id, "Выберите время:",
+                         reply_markup=get_time_markup(call.data, free_times)).id
+        data[call.from_user.id] = message_id
+
+        bot.set_state(call.message.chat.id, ReservationStates.get_time)
 
 
 @bot.callback_query_handler(func=None, state=ReservationStates.get_time)
@@ -152,6 +171,13 @@ def reservation_handler(call):
     #                               keyboard=KEYBOARD)
     #     return
     # Присвоение найденному Timetable объекту user_id и изменение поля is_booked
+
+    with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
+        cur_message_id = data[call.from_user.id]
+        if cur_message_id is not None:
+            bot.delete_message(call.message.chat.id, cur_message_id)
+            data[call.from_user.id] = None
+
     if cur_t is not None:
         cur_t.user_id = cur_user.id
         cur_t.is_booked = True
