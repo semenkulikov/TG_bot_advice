@@ -87,6 +87,7 @@ def get_start_date(message: Message):
 
     if message.text in get_all_commands_bot():
         bot.send_message(message.from_user.id, "Это команда бота!")
+        bot.set_state(message.from_user.id, None)
         return
     app_logger.info(f"Начальная дата от {message.from_user.full_name}: {message.text}")
     try:
