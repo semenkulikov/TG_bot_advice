@@ -1,6 +1,6 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from config_data.config import ALLOWED_USERS
+from config_data.config import ADMIN_ID
 from database.models import User, Timetable
 
 
@@ -10,7 +10,7 @@ def users_markup():
     actions = InlineKeyboardMarkup(row_width=2)
 
     for user in users_obj:
-        if int(user.user_id) not in ALLOWED_USERS:
+        if int(user.user_id) != int(ADMIN_ID):
             actions.add(InlineKeyboardButton(text=f"{user.full_name}", callback_data=user.id))
     actions.add(InlineKeyboardButton(text=f"Выйти", callback_data="Exit"))
     return actions
