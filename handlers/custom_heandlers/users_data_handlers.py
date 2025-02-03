@@ -13,7 +13,11 @@ from states.states import UsersDataStates
 def get_users_data_handler(message: Message):
     """ Хендлер для отправки данных пользователя """
     app_logger.info(f"Пользователь {message.from_user.full_name} отправляет свои данные...")
-    bot.send_message(message.from_user.id, "Какие данные вы хотите добавить?", reply_markup=users_data_markup())
+    message_id = bot.send_message(message.from_user.id, "Какие данные вы хотите добавить?",
+                                  reply_markup=users_data_markup()).id
+
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data[message.from_user.id] = message_id
     bot.set_state(message.from_user.id, UsersDataStates.get_data_state)
 
 
@@ -21,6 +25,13 @@ def get_users_data_handler(message: Message):
 def get_data_handler(call):
     """ Хендлер для дальнейшего распределения ввода пользовательских данных """
     bot.answer_callback_query(callback_query_id=call.id)
+
+    with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
+        cur_message_id = data[call.from_user.id]
+        if cur_message_id is not None:
+            bot.delete_message(call.message.chat.id, cur_message_id)
+            data[call.from_user.id] = None
+
     if call.data == "Contact":
         bot.send_message(call.from_user.id, "Нажмите на кнопку ниже", reply_markup=send_phone_reply())
         bot.set_state(call.from_user.id, None)

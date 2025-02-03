@@ -33,7 +33,12 @@ def my_timetables_handler(message: Message):
     """ Хендлер для управления записями пользователя """
     user = User.get(User.user_id == message.from_user.id)
     app_logger.info(f"Пользователь {user.full_name} зашел в управление записями.")
-    bot.send_message(message.from_user.id, "Вот ваши текущие записи:", reply_markup=get_timetables_markup(user.id))
+    message_id = bot.send_message(message.from_user.id, "Вот ваши текущие записи:",
+                                  reply_markup=get_timetables_markup(user.id)).id
+
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data[message.from_user.id] = message_id
+
     bot.set_state(message.from_user.id, TimetablesStates.get_obj)
 
 
@@ -43,22 +48,30 @@ def reservation_handler(call):
 
     bot.answer_callback_query(callback_query_id=call.id)
 
-    if call.data == "Cancel":
-        bot.send_message(call.from_user.id, "Вы вернулись в главное меню")
-        bot.set_state(call.from_user.id, None)
-    else:
-        cur_timetable_obj: Timetable = Timetable.get_by_id(call.data)
-        app_logger.info(f"Пользователь {call.from_user.full_name} получил информацию о записи ID={cur_timetable_obj.id}")  # noqa
+    with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
+        cur_message_id = data[call.from_user.id]
+        if cur_message_id is not None:
+            bot.delete_message(call.message.chat.id, cur_message_id)
+            data[call.from_user.id] = None
 
-        with bot.retrieve_data(call.message.chat.id, call.from_user.id) as data:
+        if call.data == "Cancel":
+            bot.send_message(call.from_user.id, "Вы вернулись в главное меню")
+            bot.set_state(call.from_user.id, None)
+        else:
+            cur_timetable_obj: Timetable = Timetable.get_by_id(call.data)
+            app_logger.info(f"Пользователь {call.from_user.full_name} "
+                            f"получил информацию о записи ID={cur_timetable_obj.id}")  # noqa
+
             data["cur_timetable_id"] = cur_timetable_obj.id  # noqa
 
-        bot.send_message(call.from_user.id, f"Информация о записи:\n"
-                                          f"Дата: {cur_timetable_obj.date.strftime('%d.%m')}\n"
-                                          f"Время: c {cur_timetable_obj.start_time.strftime('%H:%M')} до "
-                                          f"{cur_timetable_obj.end_time.strftime('%H:%M')}",
-                         reply_markup=delete_timetable_markup())
-        bot.set_state(call.from_user.id, TimetablesStates.delete_obj)
+            message_id = bot.send_message(call.from_user.id, f"Информация о записи:\n"
+                                              f"Дата: {cur_timetable_obj.date.strftime('%d.%m')}\n"
+                                              f"Время: c {cur_timetable_obj.start_time.strftime('%H:%M')} до "
+                                              f"{cur_timetable_obj.end_time.strftime('%H:%M')}",
+                             reply_markup=delete_timetable_markup()).id
+            data[call.from_user.id] = message_id
+
+            bot.set_state(call.from_user.id, TimetablesStates.delete_obj)
 
 
 @bot.callback_query_handler(func=None, state=TimetablesStates.delete_obj)
@@ -66,13 +79,20 @@ def reservation_handler(call):
     """ Хендлер для для удаления Timetable объекта """
 
     bot.answer_callback_query(callback_query_id=call.id)
-    user = User.get(User.user_id == call.from_user.id)
-    if call.data == "Cancel_":
-        bot.send_message(call.from_user.id, "Выберите запись для просмотра:",
-                         reply_markup=get_timetables_markup(user.id))
-        bot.set_state(call.from_user.id, TimetablesStates.get_obj)
-    elif call.data == "Delete":
-        with bot.retrieve_data(call.message.chat.id, call.from_user.id) as data:
+
+    with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
+        cur_message_id = data[call.from_user.id]
+        if cur_message_id is not None:
+            bot.delete_message(call.message.chat.id, cur_message_id)
+            data[call.from_user.id] = None
+
+        user = User.get(User.user_id == call.from_user.id)
+        if call.data == "Cancel_":
+            message_id = bot.send_message(call.from_user.id, "Выберите запись для просмотра:",
+                             reply_markup=get_timetables_markup(user.id)).id
+            data[call.from_user.id] = message_id
+            bot.set_state(call.from_user.id, TimetablesStates.get_obj)
+        elif call.data == "Delete":
             cur_timetable_id = data["cur_timetable_id"]
             cur_timetable_obj: Timetable = Timetable.get_by_id(cur_timetable_id)
 
