@@ -24,7 +24,7 @@ def bot_start(message: Message):
         if User.get_or_none(user_id=message.from_user.id) is None:
             User.create(user_id=message.from_user.id,
                         full_name=message.from_user.full_name,
-                        username=message.from_user.username,
+                        username=message.from_user.username if message.from_user.username is not None else "None",
                         is_premium=message.from_user.is_premium)
         commands = [f"/{command} - {description}" for command, description in DEFAULT_COMMANDS]
         if message.from_user.id in ALLOWED_USERS:
@@ -54,6 +54,6 @@ def bot_start(message: Message):
         if User.get_or_none(user_id=message.from_user.id) is None:
             User.create(user_id=message.from_user.id,
                         full_name=message.from_user.full_name,
-                        username=message.from_user.username,
+                        username=message.from_user.username if message.from_user.username is not None else "None",
                         is_premium=message.from_user.is_premium)
             app_logger.info(f"Внимание! Новый юзер: {message.from_user.full_name} - {message.from_user.username}")
