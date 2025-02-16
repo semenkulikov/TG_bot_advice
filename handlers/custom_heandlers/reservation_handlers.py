@@ -199,10 +199,11 @@ def reservation_handler(call):
         # Отправка уведомления администратору о бронировании
         app_logger.info(f"Отправка уведомления администратору о новом бронировании консультации")
         for admin_id in ALLOWED_USERS:
-            bot.send_message(admin_id, f"Новое бронирование консультации:\n"
-                                      f"Пользователь: {cur_user.full_name}\n"
-                                      f"Номер телефона: {cur_user.phone}\n"
-                                      f"Дата рождения: {cur_user.birthday}\n"
-                                      f"Время: {start_time} - {end_time}\n"
-                                      f"Дата: {cur_t.date}\n")
+            if admin_id != int(ADMIN_ID):
+                bot.send_message(admin_id, f"Новое бронирование консультации:\n"
+                                          f"Пользователь: {cur_user.full_name}\n"
+                                          f"Номер телефона: {cur_user.phone}\n"
+                                          f"Дата рождения: {cur_user.birthday}\n"
+                                          f"Время: {start_time} - {end_time}\n"
+                                          f"Дата: {cur_t.date}\n")
         bot.set_state(call.message.chat.id, None)
