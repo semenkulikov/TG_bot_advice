@@ -44,7 +44,8 @@ def reservation_date_handler(call):
         elif call.data in "Home":
             app_logger.info(f"Запрос бронирования времени на личный прием от {call.from_user.full_name}")
             bot.send_message(call.message.chat.id, "Вы записываетесь на личную консультацию. "
-                                              "Она проходит со среды по субботу с 14:00 до 18:00.")
+                                              #"Она проходит со среды по субботу с 14:00 до 18:00."
+                                                   "Она проходит каждый день с 14:00 до 18:00")
             online_advice = False
         else:
             # bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
