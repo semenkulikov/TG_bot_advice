@@ -76,10 +76,15 @@ def create_time_tables(start_date: datetime.date, end_date: datetime.date):
             #             Timetable.create(date=cur_date, start_time=start_time, end_time=end_time)
             if cur_date.weekday() in (2, 3, 4, 5, 0, 1):  # Среда, четверг, пятница и суббота - офлайн прием
                 for start_time in [# "13:00", "13:20", "13:40",
-                                   "14:00", "14:20", "14:40",
-                                   "15:00", "15:20", "15:40", "16:00", "16:20", "16:40",
-                                   "17:00", "17:20", "17:40"]: # "18:00", "18:20", "18:40"]:
-                    end_time = start_time.split(":")[0] + ":" + str(int(start_time.split(":")[1]) + 19)
+                                   # "14:00", "14:20", "14:40",
+                                   # "15:00", "15:20", "15:40", "16:00", "16:20", "16:40",
+                                   # "17:00", "17:20", "17:40"]: # "18:00", "18:20", "18:40"]:
+                                    "14:00", "14:15", "14:30", "14:45",
+                                    "15:00", "15:15", "15:30", "15:45",
+                                    "16:00", "16:15", "16:30", "16:45",
+                                    "17:00", "17:15", "17:30", "17:45"]:
+                    # end_time = start_time.split(":")[0] + ":" + str(int(start_time.split(":")[1]) + 19)
+                    end_time = start_time.split(":")[0] + ":" + str(int(start_time.split(":")[1]) + 14)
                     if not Timetable.select().where(Timetable.date == cur_date,
                                                     Timetable.start_time == start_time,
                                                     Timetable.end_time == end_time).exists():
