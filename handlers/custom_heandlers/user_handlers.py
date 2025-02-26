@@ -1,8 +1,4 @@
-import datetime
-
 from telebot.types import Message
-
-from config_data.config import ALLOWED_USERS
 from database.models import User, Timetable
 from keyboards.inline.accounts import users_markup, get_timetables_markup, delete_timetable_markup
 from loader import bot, app_logger
