@@ -140,39 +140,6 @@ def reservation_handler(call):
             cur_t = t
             break
 
-
-    # Если профиль пользователя не содержит телефон, или ему меньше 21 года, то блокируем
-    # if user.phone is None:
-    #     app_logger.warning(f"Внимание! Запрос бронирования консультации от {user.full_name} "
-    #                        f"на {datetime_reserved} отклонен: нет телефона")
-    #     vk_api_elem.messages.send(peer_id=user_id,
-    #                               message="Пожалуйста, укажите ваш номер телефона для того, чтобы мы могли выслать напоминание о времени вашей записи!\n"
-    #                                       "Напишите ваш номер телефона в формате: +79991234567",
-    #                               random_id=get_random_id(),
-    #                               keyboard=KEYBOARD)
-    #     return
-    # elif user.birthday is None:
-    #     app_logger.warning(f"Внимание! Запрос бронирования консультации от {user.full_name} "
-    #                        f"на {datetime_reserved} отклонен: не указан день рождения")
-    #     vk_api_elem.messages.send(peer_id=user_id,
-    #                               message="Бронирование не удалось: не указан день рождения!\n"
-    #                                       "Напишите ваш день рождения в формате: 12.13.1415 (день, месяц, год)",
-    #                               random_id=get_random_id(),
-    #                               keyboard=KEYBOARD)
-    #     return
-    # user_birthday_list = [int(elem) for elem in user.birthday.split(".")]
-    # user_birthday = datetime.date(year=user_birthday_list[2], month=user_birthday_list[1],
-    #                               day=user_birthday_list[0])
-    # if (datetime.datetime.now().date() - user_birthday).days <= 7665:
-    #     app_logger.warning(f"Внимание! Запрос бронирования консультации от {user.full_name} "
-    #                        f"на {datetime_reserved} отклонен: менее 21 года")
-    #     vk_api_elem.messages.send(peer_id=user_id,
-    #                               message="Бронирование не удалось: вы должны быть старше 21 года!",
-    #                               random_id=get_random_id(),
-    #                               keyboard=KEYBOARD)
-    #     return
-    # Присвоение найденному Timetable объекту user_id и изменение поля is_booked
-
     with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
         cur_message_id = data[call.from_user.id]
         if cur_message_id is not None:
