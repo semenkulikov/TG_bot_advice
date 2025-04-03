@@ -1,13 +1,12 @@
 import datetime
 import os
-import threading
-from time import sleep
 import peewee
 
 from config_data.config import BASE_DIR
-from loader import app_logger
 
-db = peewee.SqliteDatabase(os.path.join(BASE_DIR, "database/database.db"))
+db = peewee.SqliteDatabase(os.path.join(BASE_DIR, "database/database.db"),
+                           pragmas={'journal_mode': 'wal', 'cache_size': -1024 * 64,
+                                    'check_same_thread': False})
 
 
 class BaseModel(peewee.Model):
@@ -61,20 +60,20 @@ def create_time_tables(start_date: datetime.date, end_date: datetime.date):
     for i in range(timedelta_days):
         cur_date = start_date + datetime.timedelta(days=i)
         if cur_date.weekday() not in []:  # [6]:  # Будни, кроме выходных
-            # if cur_date.weekday() in (0, 1):  # Понедельник, вторник - онлайн прием
-            #     for start_time in [# "10:00", "10:20", "10:40", "11:00", "11:20", "11:40",
-            #                        # "14:00", "14:20", "14:40", "15:00", "15:20", "15:40",
-            #                        # "16:00", "16:20", "16:40",
-            #                         "17:00", "17:20", "17:40", "18:00", "18:20", "18:40",
-            #                         "19:00", "19:20", "19:40", "20:00", "20:20", "20:40",
-            #                         "21:00", "21:20", "21:40"]:
-            #         end_time = start_time.split(":")[0] + ":" + str(int(start_time.split(":")[1]) + 19)
-            #         # Проверка, нет ли уже существующей записи
-            #         if not Timetable.select().where(Timetable.date == cur_date,
-            #                                         Timetable.start_time == start_time,
-            #                                         Timetable.end_time == end_time).exists():
-            #             Timetable.create(date=cur_date, start_time=start_time, end_time=end_time)
-            if cur_date.weekday() in (2, 3, 4, 5, 0, 1):  # Среда, четверг, пятница и суббота - офлайн прием
+            if cur_date.weekday() in (0, 1):  # Понедельник, вторник - онлайн прием
+                for start_time in [# "10:00", "10:20", "10:40", "11:00", "11:20", "11:40",
+                                   # "14:00", "14:20", "14:40", "15:00", "15:20", "15:40",
+                                   # "16:00", "16:20", "16:40",
+                                    "17:00", "17:20", "17:40", "18:00", "18:20", "18:40",
+                                    "19:00", "19:20", "19:40", "20:00", "20:20", "20:40",
+                                    "21:00", "21:20", "21:40"]:
+                    end_time = start_time.split(":")[0] + ":" + str(int(start_time.split(":")[1]) + 19)
+                    # Проверка, нет ли уже существующей записи
+                    if not Timetable.select().where(Timetable.date == cur_date,
+                                                    Timetable.start_time == start_time,
+                                                    Timetable.end_time == end_time).exists():
+                        Timetable.create(date=cur_date, start_time=start_time, end_time=end_time)
+            if cur_date.weekday() in (2, 3, 4, 5):  # Среда, четверг, пятница и суббота - офлайн прием
                 for start_time in [# "13:00", "13:20", "13:40",
                                    # "14:00", "14:20", "14:40",
                                    # "15:00", "15:20", "15:40", "16:00", "16:20", "16:40",
