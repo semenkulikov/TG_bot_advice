@@ -8,7 +8,7 @@ from database.models import Timetable
 def advice_markup():
     """ Inline buttons для выбора режима записи на прием """
     actions = InlineKeyboardMarkup(row_width=1)
-    # actions.add(InlineKeyboardButton(text=f"Онлайн прием", callback_data="Online"))
+    actions.add(InlineKeyboardButton(text=f"Онлайн прием", callback_data="Online"))
     actions.add(InlineKeyboardButton(text=f"Личный прием", callback_data="Home"))
     actions.add(InlineKeyboardButton(text=f"Выйти", callback_data="Exit"))
     return actions
@@ -26,13 +26,13 @@ def get_date_markup(online_advice=True) -> InlineKeyboardMarkup:
     for timetable_obj in Timetable.select().where(Timetable.date >= cur_datetime.date()):
         if timetable_obj.date == cur_datetime.date():
             if timetable_obj.start_time.hour >= cur_datetime.time().hour:
-                # if (online_advice is False and timetable_obj.date.weekday() in (2, 3, 4, 5) or
-                #         online_advice is True and timetable_obj.date.weekday() in (0, 1)):
-                existing_dates.append(timetable_obj.date)
+                if (online_advice is False and timetable_obj.date.weekday() in (2, 3, 4, 5) or
+                        online_advice is True and timetable_obj.date.weekday() in (0, 1)):
+                    existing_dates.append(timetable_obj.date)
         else:
-            # if (online_advice is False and timetable_obj.date.weekday() in (2, 3, 4, 5) or
-            #         online_advice is True and timetable_obj.date.weekday() in (0, 1)):
-            existing_dates.append(timetable_obj.date)
+            if (online_advice is False and timetable_obj.date.weekday() in (2, 3, 4, 5) or
+                    online_advice is True and timetable_obj.date.weekday() in (0, 1)):
+                existing_dates.append(timetable_obj.date)
     # Сортировка списка объектов Timetable по возрастанию даты и удаление дублирующихся записей
     existing_dates = sorted(list(set(existing_dates)))
 
