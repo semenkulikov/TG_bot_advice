@@ -12,6 +12,7 @@ from utils.functions import get_all_commands_bot
 
 @bot.message_handler(commands=["admin_panel"])
 def admin_panel(message: Message):
+    """ Главный хендлер для админ панели """
     if message.from_user.id in ALLOWED_USERS:
         app_logger.info(f"Администратор {message.from_user.full_name} зашел в админ панель.")
         bot.send_message(message.from_user.id, "Админ панель")
@@ -24,6 +25,7 @@ def admin_panel(message: Message):
 
 @bot.callback_query_handler(func=None, state=AdminPanel.get_users)
 def get_user(call):
+    """ Collback хендлер для выдачи списка пользователей """
     bot.answer_callback_query(callback_query_id=call.id)
     if call.data == "Exit":
         bot.send_message(call.message.chat.id, "Вы успешно вышли из админ панели.")
